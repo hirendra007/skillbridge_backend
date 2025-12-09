@@ -19,6 +19,7 @@ communityRoutes.get("/:topicId", async (c) => {
     }));
     return c.json(posts);
   } catch (error) {
+    console.error("Error fetching community posts:", error);
     return c.json({ error: "Failed to fetch posts" }, 500);
   }
 });
