@@ -4,32 +4,48 @@ import { FieldValue } from "firebase-admin/firestore";
 
 const authRoutes = new Hono<{ Variables: { user: any } }>();
 
-// POST /auth/sync - Called after user logs in on frontend to save/update basic user data
 authRoutes.post("/sync", async (c) => {
-  const user = c.get("user"); // Verified by middleware
-  const { email, displayName, photoURL } = await c.req.json();
-
+  const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const { email, displayName, photoURL } = await c.req.json();
 
   try {
     const userRef = db.collection("users").doc(user.uid);
+    
+    // Create/Update basic info
     await userRef.set({
       email,
       name: displayName,
       photoURL,
       lastSeenAt: FieldValue.serverTimestamp(),
-      // We use set with merge, so we don't overwrite existing data like 'createdAt' if it exists
     }, { merge: true });
 
-    // Ensure createdAt exists if it's a new user
-    const docSnap = await userRef.get();
-    if (!docSnap.data()?.createdAt) {
-      await userRef.update({ createdAt: FieldValue.serverTimestamp() });
+    // Initialize profile defaults if new
+    const snapshot = await userRef.get();
+    if (!snapshot.exists || !snapshot.data()?.createdAt) {
+      await userRef.update({ 
+        createdAt: FieldValue.serverTimestamp(),
+        interests: [] // Default empty interests
+      });
+      
+      // Also init userProfile stats if missing
+      const statsRef = db.collection("userProfiles").doc(user.uid);
+      const statsSnap = await statsRef.get();
+      if(!statsSnap.exists) {
+         await statsRef.set({
+            userId: user.uid,
+            totalXp: 0,
+            completedLessons: [],
+            currentStreak: 0,
+            lastActivityDate: ""
+         });
+      }
     }
 
     return c.json({ success: true });
   } catch (error) {
-    console.error("Sync error:", error);
+    console.error("Auth sync error:", error);
     return c.json({ error: "Failed to sync user" }, 500);
   }
 });

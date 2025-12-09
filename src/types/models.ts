@@ -52,8 +52,11 @@ export interface ContentSnippet {
 
 export interface UserProfile {
   userId: string;
+  email?: string;
+  name: string;
   totalXp: number;
-  completedLessons: string[];
-  currentStreak: number; // e.g., 5 for a 5-day streak
-  lastActivityDate: string; // e.g., "2025-09-25"
+  completedLessons: string[]; // Unlocks next lessons
+  currentStreak: number;
+  lastActivityDate: string;
+  interests: string[]; // Personalizes Home feed
 }
