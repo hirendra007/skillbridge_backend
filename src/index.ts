@@ -13,6 +13,7 @@ import assessmentRoutes from "./routes/assessments";
 import userProfileRoutes from "./routes/userProfile";
 import leaderboardRoutes from "./routes/leaderboard";
 import authRoutes from "./routes/auth";
+import communityRoutes from "./routes/community";
 
 const app = new Hono<{ Variables: { user: DecodedIdToken } }>();
 app.use("*", logger());
@@ -40,6 +41,7 @@ app.route("/assessments", assessmentRoutes);
 app.route("/user-profile", userProfileRoutes);
 app.route("/leaderboard", leaderboardRoutes);
 app.route("/auth", authRoutes); // Ensure auth/sync is registered
+app.route("/community", communityRoutes);
 
 serve({
   fetch: app.fetch,

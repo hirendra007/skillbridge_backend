@@ -60,3 +60,24 @@ export interface UserProfile {
   lastActivityDate: string;
   interests: string[]; // Personalizes Home feed
 }
+
+export interface CommunityPost {
+  id: string;
+  topicId: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  content: string;
+  likes: number;
+  replyCount: number;
+  createdAt: any; // Timestamp
+}
+
+export interface CommunityReply {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: any;
+}
