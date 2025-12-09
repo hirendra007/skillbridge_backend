@@ -123,4 +123,28 @@ mentorshipRoutes.post("/apply", async (c) => {
   }
 });
 
+// GET /mentorship/requests/sent
+// Student views their own outgoing requests
+mentorshipRoutes.get("/requests/sent", async (c) => {
+  const user = c.get("user");
+  try {
+    const snapshot = await db.collection("mentorshipRequests")
+      .where("studentId", "==", user.uid)
+      .get(); // Note: Add .orderBy("createdAt", "desc") if you create the index
+
+    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Manual sort to avoid index errors for now
+    requests.sort((a: any, b: any) => {
+        const timeA = a.createdAt?.toMillis() || 0;
+        const timeB = b.createdAt?.toMillis() || 0;
+        return timeB - timeA;
+    });
+
+    return c.json(requests);
+  } catch (error) {
+    return c.json({ error: "Failed to fetch requests" }, 500);
+  }
+});
+
 export default mentorshipRoutes;

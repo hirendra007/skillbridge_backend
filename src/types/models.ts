@@ -98,3 +98,15 @@ export interface MentorshipRequest {
   message: string;
   createdAt: any;
 }
+
+export interface MentorContent {
+  id: string;
+  mentorId: string;
+  mentorName: string;
+  topicId: string; // Links content to a topic (e.g., 'finance')
+  title: string;
+  type: 'video' | 'article' | 'pdf';
+  url: string; // YouTube link or Firebase Storage URL
+  description: string;
+  createdAt: any;
+}
