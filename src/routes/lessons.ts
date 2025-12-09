@@ -4,6 +4,7 @@ import { Lesson } from "../types/models";
 
 const lessonsRoutes = new Hono();
 
+// GET /lessons/:topicId
 lessonsRoutes.get("/:topicId", async (c) => {
   const { topicId } = c.req.param();
 
@@ -25,6 +26,7 @@ lessonsRoutes.get("/:topicId", async (c) => {
 
     return c.json(lessons);
   } catch (error) {
+    console.error("Error fetching lessons list:", error);
     return c.json({ error: "Failed to fetch lessons" }, 500);
   }
 });
