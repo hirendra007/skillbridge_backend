@@ -24,6 +24,13 @@ userProfileRoutes.get("/", async (c) => {
       name: userData?.name || "Learner",
       email: userData?.email,
       interests: userData?.interests || [],
+      // FIX: Include isMentor field
+      isMentor: userData?.isMentor || false,
+      // Optional fields can be undefined if not present
+      mentorTopics: userData?.mentorTopics,
+      mentorBio: userData?.mentorBio,
+      mentorRating: userData?.mentorRating,
+      mentorHourlyRate: userData?.mentorHourlyRate
     };
 
     return c.json(fullProfile);

@@ -59,6 +59,11 @@ export interface UserProfile {
   currentStreak: number;
   lastActivityDate: string;
   interests: string[]; // Personalizes Home feed
+  isMentor: boolean;
+  mentorTopics?: string[]; // Topics they are qualified to teach
+  mentorBio?: string;
+  mentorRating?: number;
+  mentorHourlyRate?: number;
 }
 
 export interface CommunityPost {
@@ -79,5 +84,17 @@ export interface CommunityReply {
   authorId: string;
   authorName: string;
   content: string;
+  createdAt: any;
+}
+
+export interface MentorshipRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  mentorId: string;
+  topicId: string; // The specific topic context
+  topicName: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  message: string;
   createdAt: any;
 }

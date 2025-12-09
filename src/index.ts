@@ -14,6 +14,7 @@ import userProfileRoutes from "./routes/userProfile";
 import leaderboardRoutes from "./routes/leaderboard";
 import authRoutes from "./routes/auth";
 import communityRoutes from "./routes/community";
+import mentorshipRoutes from "./routes/mentorship";
 
 const app = new Hono<{ Variables: { user: DecodedIdToken } }>();
 app.use("*", logger());
@@ -42,6 +43,7 @@ app.route("/user-profile", userProfileRoutes);
 app.route("/leaderboard", leaderboardRoutes);
 app.route("/auth", authRoutes); // Ensure auth/sync is registered
 app.route("/community", communityRoutes);
+app.route("/mentorship", mentorshipRoutes);
 
 serve({
   fetch: app.fetch,
