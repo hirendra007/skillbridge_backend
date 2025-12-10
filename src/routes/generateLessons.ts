@@ -31,16 +31,28 @@ generateRoutes.post("/", async (c) => {
     }
 
     // UPDATED: The new, more efficient prompt
-    const prompt = `You are an expert instructional designer. For the topic "${topic}", generate a JSON array of 3 unique, beginner-level lessons. Respond ONLY with a raw JSON array.
+    // The correct way to define the elaborated schema within the template string:
+
+    const systemPrompt = `You are an expert instructional designer. For the topic "${topic}", generate a JSON array of 3 unique, beginner-level lessons. Respond ONLY with a raw JSON array.
+
+**IMPORTANT CONTENT INSTRUCTIONS:**
+1.  **Elaboration:** The 'content' array for each lesson must be highly elaborated, consisting of at least 5 distinct objects.
+2.  **Detail:** Ensure each text block is comprehensive, not just a short sentence.
 
 Each object in the array must match this schema:
 {
   "title": "string",
   "xp": 100,
-  "estimatedMinutes": 5,
+  "estimatedMinutes": 10,
   "difficulty": "beginner",
   "tags": "string[]",
-  "content": [{ "type": "string", "text": "string" }],
+  "content": [
+    { "type": "paragraph", "text": "The primary explanation of the concept goes here. This should be a robust paragraph detailing the core idea." },
+    { "type": "key-concept", "text": "KEY CONCEPT: A concise, impactful definition of the most vital term or rule in the lesson." },
+    { "type": "paragraph", "text": "A secondary paragraph that provides supporting context, examples, or differentiates this concept from related ideas. This ensures complexity and depth." },
+    { "type": "tip", "text": "PRO TIP: Offer specific, actionable advice or a common pitfall to avoid in the real world." },
+    { "type": "paragraph", "text": "A concluding statement that summarizes the main takeaways and transitions the student mentally toward the assessment." }
+  ],
   "assessment": {
     "passingScore": 80,
     "questions": [
@@ -58,8 +70,9 @@ Each object in the array must match this schema:
 }`;
 
     try {
-      // UPDATED: A single API call per topic
-      const { text } = await generateText({ model, prompt, temperature: 0.4 });
+      // FIX: Use systemPrompt instead of the undefined 'prompt' variable
+      const { text } = await generateText({ model, prompt: systemPrompt, temperature: 0.4 });
+      
       const clean = text.replace(/```json|```/g, "").trim();
       const lessons = JSON.parse(clean); // This is now an array of lessons
 
