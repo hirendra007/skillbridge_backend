@@ -18,7 +18,7 @@ generateRoutes.post("/", async (c) => {
       return c.json({ error: "Server configuration error: AI key missing." }, 500);
   }
 
-  const model = google("gemini-2.5-flash");
+  const model = google("gemini-2.0-flash");
   const results: Record<string, any[]> = {};
 
   for (const topic of topics) {
