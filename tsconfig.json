@@ -1,8 +1,29 @@
 {
   "compilerOptions": {
-    "strict": true,
+    /* Base Options */
+    "target": "ES2020",             /* Set the target JavaScript language version to ES2020 (or higher, e.g., ES2022). This fixes the iteration error (TS2802). */
+    "module": "CommonJS",           /* Specify the module code generation method. CommonJS is standard for Node/Bun backend. */
+    "rootDir": "./src",             /* Specify the root folder within your source files. */
+    "outDir": "./dist",             /* Specify the output directory for built code. */
+    
+    /* Strictness & Interop */
+    "strict": true,                 /* Enable all strict type-checking options. */
+    "esModuleInterop": true,        /* Emit additional JS to ease importing CommonJS modules. */
+    "skipLibCheck": true,           /* Skip type checking of declaration files (*.d.ts). */
+    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
+    
+    /* JSX Options (Required for Hono/JSX) */
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "esModuleInterop": true,
-  }
+    
+    /* Iteration (Explicitly enabling if 'target' was below ES2015, but good practice to include for clarity) */
+    "downlevelIteration": true       /* Ensures smooth iteration across different targets. */
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -12,11 +12,17 @@ generateRoutes.post("/", async (c) => {
     return c.json({ error: "topics[] required" }, 400);
   }
 
+  // Ensure the API Key is available via environment variables for @ai-sdk/google
+  if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not set.");
+      return c.json({ error: "Server configuration error: AI key missing." }, 500);
+  }
+
   const model = google("gemini-2.5-flash");
   const results: Record<string, any[]> = {};
 
   for (const topic of topics) {
-    // Find or create the topicId
+    // 1. Find or create the topicId
     const topicRef = await db
       .collection("topics")
       .where("name", "==", topic)
@@ -24,34 +30,34 @@ generateRoutes.post("/", async (c) => {
       .get();
     let topicId: string;
     if (topicRef.empty) {
-      const doc = await db.collection("topics").add({ name: topic });
+      // Should not happen if seed.ts ran, but added for robustness
+      const doc = await db.collection("topics").add({ name: topic, createdAt: new Date() });
       topicId = doc.id;
     } else {
       topicId = topicRef.docs[0].id;
     }
 
-    // UPDATED: The new, more efficient prompt
-    // The correct way to define the elaborated schema within the template string:
-
+    // 2. Define the elaborated, forceful prompt
     const systemPrompt = `You are an expert instructional designer. For the topic "${topic}", generate a JSON array of 3 unique, beginner-level lessons. Respond ONLY with a raw JSON array.
 
-**IMPORTANT CONTENT INSTRUCTIONS:**
-1.  **Elaboration:** The 'content' array for each lesson must be highly elaborated, consisting of at least 5 distinct objects.
-2.  **Detail:** Ensure each text block is comprehensive, not just a short sentence.
+**CRITICAL CONTENT INSTRUCTIONS:**
+1.  **MINIMUM LENGTH:** The 'content' array for each lesson MUST contain a total of at least 5 distinct objects.
+2.  **ELABORATION REQUIREMENT:** The text field within any object of type **"paragraph"** must be **VERBOSE and EXHAUSTIVE**, containing detailed explanations and clear examples. **EACH "paragraph" TEXT BLOCK MUST BE A MINIMUM OF 150 WORDS LONG.**
+3.  **FORMATTING CONSTRAINT:** DO NOT use bullet points, numbered lists, or short sentences within the 'text' fields. DO NOT summarize; elaborate fully.
 
-Each object in the array must match this schema:
+Each object in the array MUST strictly adhere to this schema:
 {
   "title": "string",
-  "xp": 100,
-  "estimatedMinutes": 10,
+  "xp": 150,
+  "estimatedMinutes": 15,
   "difficulty": "beginner",
   "tags": "string[]",
   "content": [
-    { "type": "paragraph", "text": "The primary explanation of the concept goes here. This should be a robust paragraph detailing the core idea." },
-    { "type": "key-concept", "text": "KEY CONCEPT: A concise, impactful definition of the most vital term or rule in the lesson." },
-    { "type": "paragraph", "text": "A secondary paragraph that provides supporting context, examples, or differentiates this concept from related ideas. This ensures complexity and depth." },
-    { "type": "tip", "text": "PRO TIP: Offer specific, actionable advice or a common pitfall to avoid in the real world." },
-    { "type": "paragraph", "text": "A concluding statement that summarizes the main takeaways and transitions the student mentally toward the assessment." }
+    { "type": "paragraph", "text": "This must be the primary, most robust explanation. Explain the core concept, its purpose, why it's important, and provide a strong real-world example. ENSURE THIS SECTION IS AT LEAST 150 WORDS LONG." },
+    { "type": "key-concept", "text": "KEY CONCEPT: A precise, one-sentence definition of the main term." },
+    { "type": "paragraph", "text": "This secondary paragraph must elaborate on the implications, common mistakes, or advanced usage of the key concept. Provide another, distinct example or analogy to solidify the student's understanding. ENSURE THIS SECTION IS AT LEAST 150 WORDS LONG." },
+    { "type": "tip", "text": "PRO TIP: Offer specific, actionable, and practical advice related to the lesson content." },
+    { "type": "paragraph", "text": "A concluding and synthesizing paragraph that ties the concepts together and prepares the student for the assessment section. This should also be a full paragraph, NOT a short summary. ENSURE THIS SECTION IS AT LEAST 150 WORDS LONG." }
   ],
   "assessment": {
     "passingScore": 80,
@@ -70,36 +76,49 @@ Each object in the array must match this schema:
 }`;
 
     try {
-      // FIX: Use systemPrompt instead of the undefined 'prompt' variable
+      // 3. API Call using systemPrompt
       const { text } = await generateText({ model, prompt: systemPrompt, temperature: 0.4 });
       
-      const clean = text.replace(/```json|```/g, "").trim();
-      const lessons = JSON.parse(clean); // This is now an array of lessons
+      // 4. ROBUST JSON CLEANUP AND PARSING
+      // Match the entire array structure to remove surrounding text/markdown fences (```json)
+      const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/); 
+    
+      if (!jsonMatch || jsonMatch.length === 0) {
+          throw new Error("AI output did not contain a recognizable JSON array.");
+      }
+      
+      const clean = jsonMatch[0].trim();
+      const lessons = JSON.parse(clean); 
+      
+      // Ensure the result is an array before processing
+      if (!Array.isArray(lessons)) {
+          throw new Error("Parsed JSON is not an array of lessons.");
+      }
 
+      // 5. Save to Firestore
       const batch = db.batch();
       const generatedLessons = [];
 
-      // UPDATED: Loop through the array of lessons returned by the AI
       for (const [index, lesson] of lessons.entries()) {
-        // Use .entries() to get the index
         const lessonRef = db.collection("lessons").doc();
         batch.set(lessonRef, {
           ...lesson,
           topicId,
-          order: index + 1, // <-- ADD THIS LINE (e.g., 1, 2, 3, 4, 5)
+          order: index + 1,
           createdAt: new Date(),
         });
         generatedLessons.push({ id: lessonRef.id, ...lesson });
       }
 
-      await batch.commit(); // Commit all lessons to Firestore at once
+      await batch.commit();
       results[topic] = generatedLessons;
     } catch (error) {
       console.error(
         `Failed to generate lessons for topic "${topic}". Error:`,
         error
       );
-      results[topic] = []; // Add an empty array for failed topics
+      // If one topic fails, it doesn't block the rest, but logs the error
+      results[topic] = []; 
     }
   }
 
