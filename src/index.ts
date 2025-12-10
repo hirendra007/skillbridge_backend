@@ -17,6 +17,7 @@ import communityRoutes from "./routes/community";
 import mentorshipRoutes from "./routes/mentorship";
 import contentRoutes from "./routes/content";
 import chatRoutes from "./routes/chat";
+import generateRoutes from "./routes/generateLessons";
 
 const app = new Hono<{ Variables: { user: DecodedIdToken } }>();
 app.use("*", logger());
@@ -48,6 +49,7 @@ app.route("/community", communityRoutes);
 app.route("/mentorship", mentorshipRoutes);
 app.route("/content", contentRoutes);
 app.route("/chat", chatRoutes);
+app.route("/generate-lessons", generateRoutes);
 
 serve({
   fetch: app.fetch,
