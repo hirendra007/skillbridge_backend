@@ -43,7 +43,7 @@ generateRoutes.post("/", async (c) => {
     // 1b. Create the new topic document with the description
     const doc = await db.collection("topics").add({ 
      name: topic, 
-     description: topicDescription, // <-- NEW: Storing the description
+     description: topicDescription, // <-- Storing the description
      createdAt: new Date() 
     });
     topicId = doc.id;
@@ -60,7 +60,7 @@ generateRoutes.post("/", async (c) => {
     const xp = difficulty === 'easy' ? 50 : difficulty === 'medium' ? 100 : 150;
     const estimatedMinutes = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15;
 
-    // 3. Define the dynamic system prompt (REQUESTING ONLY 1 LESSON)
+    // 3. Define the dynamic system prompt (1 lesson, with 'proTip' field)
     const systemPrompt = `You are an expert instructional designer. For the topic "${topic}", generate a JSON array of **1 unique, ${difficulty}**-level lesson. Respond ONLY with a raw JSON array. The 'difficulty' field in the schema MUST be set to '${difficulty}'.
 
 Each object in the array must match this schema:
@@ -70,6 +70,7 @@ Each object in the array must match this schema:
  "estimatedMinutes": ${estimatedMinutes},
  "difficulty": "${difficulty}",
  "tags": "string[]",
+  "proTip": "string (A single, one-line, valuable tip related to the lesson)", // <--- THE NEW REQUIRED FIELD
  "content": [{ "type": "string", "text": "string" }],
  "assessment": {
   "passingScore": 80,
@@ -90,7 +91,7 @@ Each object in the array must match this schema:
     // 4. API Call
     const { text } = await generateText({ model, prompt: systemPrompt, temperature: 0.4 });
     
-    // 5. JSON Parsing (handles an array with a single element)
+    // 5. JSON Parsing
     const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/); 
    
     if (!jsonMatch || jsonMatch.length === 0) {
