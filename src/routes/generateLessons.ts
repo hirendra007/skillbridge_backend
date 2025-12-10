@@ -12,13 +12,7 @@ generateRoutes.post("/", async (c) => {
     return c.json({ error: "topics[] required" }, 400);
   }
 
-  // Ensure the API Key is available via environment variables for @ai-sdk/google
-  if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY is not set.");
-      return c.json({ error: "Server configuration error: AI key missing." }, 500);
-  }
-
-  const model = google("gemini-2.0-flash");
+  const model = google("gemini-2.5-flash");
   const results: Record<string, any[]> = {};
 
   for (const topic of topics) {
